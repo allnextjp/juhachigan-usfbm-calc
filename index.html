@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USDS × 十八願物流 送料シミュレーター</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000000;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #000000;
+            font-size: 2.2em;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #666666;
+            font-size: 1.1em;
+            font-weight: 400;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: #ffffff;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: #000000;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .card h2 {
+            color: #000000;
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #333333;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: #ffffff;
+            color: #333333;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #000000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #999999;
+        }
+
+        .results {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 30px;
+        }
+
+        .results h2 {
+            color: #000000;
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 25px;
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #000000;
+        }
+
+        .shipping-option {
+            background: #ffffff;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .shipping-option:hover {
+            border-color: #666666;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .shipping-option.better {
+            border-color: #000000;
+            background: #f8f9fa;
+        }
+
+        .shipping-option .service-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 8px;
+        }
+
+        .shipping-option .price {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #000000;
+            margin-bottom: 5px;
+        }
+
+        .shipping-option .weight-info {
+            font-size: 0.9em;
+            color: #666666;
+            margin-bottom: 8px;
+        }
+
+        .shipping-option .savings {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #000000;
+            color: #ffffff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .comparison {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            color: #333333;
+        }
+
+        .info-sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .info-section {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 25px;
+        }
+
+        .info-section h3 {
+            color: #000000;
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .info-section h4 {
+            color: #333333;
+            font-size: 1em;
+            font-weight: 600;
+            margin: 15px 0 8px 0;
+        }
+
+        .info-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-section li {
+            padding: 4px 0;
+            color: #666666;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .info-section li::before {
+            content: "・";
+            color: #333333;
+            margin-right: 5px;
+        }
+
+        .info-section a {
+            color: #000000;
+            text-decoration: underline;
+            font-weight: 500;
+        }
+
+        .info-section a:hover {
+            color: #333333;
+        }
+
+        .warning {
+            background: #fff8e1;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .warning h4 {
+            color: #000000;
+            margin-bottom: 10px;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .info-sections {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.6em;
+            }
+            
+            .card {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>USDS × 十八願物流 送料シミュレーター</h1>
+            <p>梱包サイズと梱包重量を入力して、FedExとECMSの送料を比較！</p>
+        </div>
+
+        <div class="main-content">
+            <div class="card">
+                <h2>📦 梱包情報入力</h2>
+                <div class="form-group">
+                    <label for="width">横幅 (cm)</label>
+                    <input type="number" id="width" min="0" step="0.1" placeholder="例: 30.0">
+                    <div class="error-message" id="width-error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="depth">奥行 (cm)</label>
+                    <input type="number" id="depth" min="0" step="0.1" placeholder="例: 25.0">
+                    <div class="error-message" id="depth-error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="height">高さ (cm)</label>
+                    <input type="number" id="height" min="0" step="0.1" placeholder="例: 15.0">
+                    <div class="error-message" id="height-error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="weight">梱包重量 (kg)</label>
+                    <input type="number" id="weight" min="0" step="0.1" placeholder="例: 2.5">
+                    <div class="error-message" id="weight-error"></div>
+                </div>
+            </div>
+
+            <div class="results">
+                <h2>💰 送料見積もり結果</h2>
+                <div id="fedex-result" class="shipping-option">
+                    <div class="service-name">FedEx</div>
+                    <div class="price">¥0</div>
+                    <div class="weight-info">計算重量: 0kg</div>
+                </div>
+                <div id="ecms-result" class="shipping-option">
+                    <div class="service-name">ECMS</div>
+                    <div class="price">¥0</div>
+                    <div class="weight-info">計算重量: 0kg</div>
+                </div>
+                <div id="comparison" class="comparison" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div class="info-sections">
+            <div class="info-section">
+                <h3>🧮 配送料・計算について</h3>
+                <h4>計算方法</h4>
+                <ul>
+                    <li>計算重量 = 実重量 と 容積重量 の大きい方</li>
+                    <li>計算重量は 0.5kg 刻みで切り上げ（例：3.2kg → 3.5kg）</li>
+                </ul>
+                <h4>容積重量の計算</h4>
+                <ul>
+                    <li>FedEx：横幅 × 奥行 × 高さ ÷ 5000</li>
+                    <li>ECMS：横幅 × 奥行 × 高さ ÷ 6000</li>
+                </ul>
+                <ul>
+                    <li>超過重量：ECMS >30.0kg / FedEx >30.0kg は「超過」と表示</li>
+                    <li>サイズ超過：3辺合計 >243cm または 最長辺 >121cm または 2番目の長辺 >76cm</li>
+                </ul>
+            </div>
+
+            <div class="info-section">
+                <h3>⚠️ ご注意</h3>
+                <div class="warning">
+                    <h4>重要な注意事項</h4>
+                    <ul>
+                        <li>Amazon商品情報は実際と異なる場合があります。梱包サイズを想定した入力を推奨します。</li>
+                        <li>表示料金は目安です。追加サービス料金は含まれません</li>
+                        <li>配送は基本 ECMS、対象外商品は FedEx（自動車関連・食品・中国産など）</li>
+                        <li><a href="https://www.ecmsglobal-jp.com/cautions2" target="_blank">🔗 委託不可商品の詳細はこちら</a></li>
+                        <li>関税は別途発生します</li>
+                        <li><a href="https://hts.usitc.gov/?utm_source=chatgpt.com" target="_blank">🔗 関税率一覧はこちら</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 基本送料テーブル（0.5kg刻み）
+        const BASE_SHIPPING_RATES = {
+            fedex: {
+                0.5: 2314, 1.0: 2615, 1.5: 2914, 2.0: 3190, 2.5: 3471,
+                3.0: 3773, 3.5: 4053, 4.0: 4538, 4.5: 5023, 5.0: 5508,
+                5.5: 5831, 6.0: 6017, 6.5: 6202, 7.0: 6388, 7.5: 6640,
+                8.0: 6960, 8.5: 7310, 9.0: 7630, 9.5: 8648, 10.0: 8867,
+                10.5: 9118, 11.0: 9369, 11.5: 9619, 12.0: 9870, 12.5: 11158,
+                13.0: 11434, 13.5: 11711, 14.0: 11987, 14.5: 12264, 15.0: 12540,
+                15.5: 12817, 16.0: 14266, 16.5: 14568, 17.0: 14869, 17.5: 15170,
+                18.0: 15471, 18.5: 15773, 19.0: 16074, 19.5: 16375, 20.0: 16677,
+                20.5: 16978, 21.0: 20144, 21.5: 20649, 22.0: 21153, 22.5: 21657,
+                23.0: 22161, 23.5: 22666, 24.0: 23170, 24.5: 23674, 25.0: 24178,
+                25.5: 24683, 26.0: 25187, 26.5: 25691, 27.0: 26195, 27.5: 26700,
+                28.0: 27204, 28.5: 27708, 29.0: 28212, 29.5: 28716, 30.0: 29221
+            },
+            ecms: {
+                0.5: 1304, 1.0: 1641, 1.5: 1979, 2.0: 2315, 2.5: 2682,
+                3.0: 3013, 3.5: 3307, 4.0: 3604, 4.5: 3904, 5.0: 4329,
+                5.5: 4637, 6.0: 4942, 6.5: 5248, 7.0: 5552, 7.5: 5804,
+                8.0: 6084, 8.5: 6395, 9.0: 6680, 9.5: 6918, 10.0: 7158,
+                10.5: 7393, 11.0: 7708, 11.5: 8004, 12.0: 8295, 12.5: 8531,
+                13.0: 8551, 13.5: 8835, 14.0: 9115, 14.5: 9350, 15.0: 9709,
+                15.5: 10007, 16.0: 10243, 16.5: 10513, 17.0: 10819, 17.5: 11095,
+                18.0: 11331, 18.5: 11627, 19.0: 11917, 19.5: 12164, 20.0: 12472,
+                20.5: 12782, 21.0: 13018, 21.5: 13294, 22.0: 13604, 22.5: 13874,
+                23.0: 14110, 23.5: 14391, 24.0: 14700, 24.5: 14942, 25.0: 15264,
+                25.5: 15528, 26.0: 15846, 26.5: 16082, 27.0: 16361, 27.5: 16619,
+                28.0: 16918, 28.5: 17154, 29.0: 17437, 29.5: 17718, 30.0: 17977
+            }
+        };
+
+        // 燃油サーチャージ率と割増率
+        const SURCHARGES = {
+            fedex: {
+                fuelSurcharge: 0.45,
+                markup: 0.25
+            },
+            ecms: {
+                fuelSurcharge: 0.484,
+                markup: 0.5
+            }
+        };
+
+        // サイズ超過判定の閾値
+        const SIZE_LIMITS = {
+            totalDimensions: 243, // 3辺合計上限（cm）
+            maxSide: 121, // 最長辺上限（cm）
+            secondMaxSide: 76 // 2番目の長辺上限（cm）
+        };
+
+        function calculateVolumetricWeight(width, depth, height, divisor) {
+            return (width * depth * height) / divisor;
+        }
+
+        function roundUpToNearestHalf(weight) {
+            return Math.ceil(weight * 2) / 2;
+        }
+
+        function checkSizeExcess(width, depth, height) {
+            const dimensions = [width, depth, height].sort((a, b) => b - a); // 降順ソート
+            const totalDimensions = dimensions.reduce((sum, dim) => sum + dim, 0);
+            const maxDimension = dimensions[0]; // 最長辺
+            const secondMaxDimension = dimensions[1]; // 2番目の長辺
+            
+            let isExcess = false;
+            let reason = null;
+            
+            if (totalDimensions > SIZE_LIMITS.totalDimensions) {
+                isExcess = true;
+                reason = `3辺合計${totalDimensions.toFixed(1)}cm > ${SIZE_LIMITS.totalDimensions}cm`;
+            } else if (maxDimension > SIZE_LIMITS.maxSide) {
+                isExcess = true;
+                reason = `最長辺${maxDimension.toFixed(1)}cm > ${SIZE_LIMITS.maxSide}cm`;
+            } else if (secondMaxDimension > SIZE_LIMITS.secondMaxSide) {
+                isExcess = true;
+                reason = `2番目の長辺${secondMaxDimension.toFixed(1)}cm > ${SIZE_LIMITS.secondMaxSide}cm`;
+            }
+            
+            return {
+                isExcess: isExcess,
+                totalDimensions: totalDimensions,
+                maxDimension: maxDimension,
+                secondMaxDimension: secondMaxDimension,
+                reason: reason
+            };
+        }
+
+        function getBaseShippingRate(service, weight) {
+            const rates = BASE_SHIPPING_RATES[service];
+            
+            if (service === 'ecms' && weight > 30.0) {
+                return '超過';
+            }
+            if (service === 'fedex' && weight > 30.0) {
+                return '超過';
+            }
+            
+            return rates[weight] || '料金不明';
+        }
+
+        function calculateFinalRate(service, baseRate) {
+            if (typeof baseRate !== 'number') return baseRate;
+            
+            const surcharge = SURCHARGES[service];
+            // 新しい計算式: 基本料金 × (1 + 燃油サーチャージ率 + 割増率)
+            const multiplier = 1 + surcharge.fuelSurcharge + surcharge.markup;
+            return Math.round(baseRate * multiplier);
+        }
+
+        function formatCurrency(amount) {
+            if (typeof amount === 'string') return amount;
+            return new Intl.NumberFormat('ja-JP', {
+                style: 'currency',
+                currency: 'JPY',
+                minimumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function updateResults() {
+            const width = parseFloat(document.getElementById('width').value) || 0;
+            const depth = parseFloat(document.getElementById('depth').value) || 0;
+            const height = parseFloat(document.getElementById('height').value) || 0;
+            const actualWeight = parseFloat(document.getElementById('weight').value) || 0;
+
+            // 入力値検証
+            if (width <= 0 || depth <= 0 || height <= 0 || actualWeight <= 0) {
+                resetResults();
+                return;
+            }
+
+            // サイズ超過チェック
+            const sizeCheck = checkSizeExcess(width, depth, height);
+
+            // 容積重量計算
+            const fedexVolumetricWeight = calculateVolumetricWeight(width, depth, height, 5000);
+            const ecmsVolumetricWeight = calculateVolumetricWeight(width, depth, height, 6000);
+
+            // 計算重量（実重量と容積重量の大きい方）
+            const fedexCalculatedWeight = Math.max(actualWeight, fedexVolumetricWeight);
+            const ecmsCalculatedWeight = Math.max(actualWeight, ecmsVolumetricWeight);
+
+            // 0.5kg刻みで切り上げ
+            const fedexRoundedWeight = roundUpToNearestHalf(fedexCalculatedWeight);
+            const ecmsRoundedWeight = roundUpToNearestHalf(ecmsCalculatedWeight);
+
+            // サイズ超過の場合
+            if (sizeCheck.isExcess) {
+                updateShippingOption('fedex-result', 'FedEx', `サイズ超過 (${sizeCheck.reason})`, fedexRoundedWeight);
+                updateShippingOption('ecms-result', 'ECMS', `サイズ超過 (${sizeCheck.reason})`, ecmsRoundedWeight);
+                document.getElementById('comparison').innerHTML = `
+                    <strong style="color: #d32f2f;">サイズ超過のため配送できません</strong><br>
+                    <small>${sizeCheck.reason}</small>
+                `;
+                document.getElementById('comparison').style.display = 'block';
+                return;
+            }
+
+            // 基本料金取得
+            const fedexBaseRate = getBaseShippingRate('fedex', fedexRoundedWeight);
+            const ecmsBaseRate = getBaseShippingRate('ecms', ecmsRoundedWeight);
+
+            // 最終料金計算（燃油サーチャージ + 割増率）
+            const fedexFinalRate = calculateFinalRate('fedex', fedexBaseRate);
+            const ecmsFinalRate = calculateFinalRate('ecms', ecmsBaseRate);
+
+            // 結果表示更新
+            updateShippingOption('fedex-result', 'FedEx', fedexFinalRate, fedexRoundedWeight, fedexBaseRate);
+            updateShippingOption('ecms-result', 'ECMS', ecmsFinalRate, ecmsRoundedWeight, ecmsBaseRate);
+
+            // 比較表示
+            updateComparison(fedexFinalRate, ecmsFinalRate);
+        }
+
+        function updateShippingOption(elementId, serviceName, rate, weight, baseRate) {
+            const element = document.getElementById(elementId);
+            const priceElement = element.querySelector('.price');
+            const weightElement = element.querySelector('.weight-info');
+            
+            priceElement.textContent = formatCurrency(rate);
+            
+            // 重量情報の表示
+            let weightInfo = `計算重量: ${weight}kg`;
+            if (typeof baseRate === 'number' && typeof rate === 'number') {
+                weightInfo += ` (基本料金: ¥${baseRate.toLocaleString()})`;
+            }
+            weightElement.textContent = weightInfo;
+            
+            // より良い選択肢のスタイル削除
+            element.classList.remove('better');
+            const savings = element.querySelector('.savings');
+            if (savings) savings.remove();
+        }
+
+        function updateComparison(fedexRate, ecmsRate) {
+            const comparison = document.getElementById('comparison');
+            
+            if (typeof fedexRate === 'number' && typeof ecmsRate === 'number') {
+                const difference = Math.abs(fedexRate - ecmsRate);
+                const cheaper = fedexRate < ecmsRate ? 'fedex' : 'ecms';
+                const cheaperElement = document.getElementById(`${cheaper}-result`);
+                
+                // より良い選択肢をハイライト
+                cheaperElement.classList.add('better');
+                
+                // 節約額表示
+                if (difference > 0) {
+                    const savingsElement = document.createElement('div');
+                    savingsElement.className = 'savings';
+                    savingsElement.textContent = `お得！ ¥${difference.toLocaleString()} 安い`;
+                    cheaperElement.appendChild(savingsElement);
+                    
+                    comparison.innerHTML = `
+                        <strong>${cheaper === 'fedex' ? 'FedEx' : 'ECMS'}の方が¥${difference.toLocaleString()}お得です！</strong>
+                    `;
+                    comparison.style.display = 'block';
+                } else {
+                    comparison.style.display = 'none';
+                }
+            } else {
+                comparison.style.display = 'none';
+            }
+        }
+
+        function resetResults() {
+            document.getElementById('fedex-result').querySelector('.price').textContent = '¥0';
+            document.getElementById('fedex-result').querySelector('.weight-info').textContent = '計算重量: 0kg';
+            document.getElementById('ecms-result').querySelector('.price').textContent = '¥0';
+            document.getElementById('ecms-result').querySelector('.weight-info').textContent = '計算重量: 0kg';
+            document.getElementById('comparison').style.display = 'none';
+            
+            // スタイルリセット
+            document.getElementById('fedex-result').classList.remove('better');
+            document.getElementById('ecms-result').classList.remove('better');
+            const savings = document.querySelectorAll('.savings');
+            savings.forEach(s => s.remove());
+        }
+
+        // イベントリスナー設定
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = ['width', 'depth', 'height', 'weight'];
+            inputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', updateResults);
+            });
+        });
+    </script>
+</body>
+</html>
