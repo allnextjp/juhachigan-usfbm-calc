@@ -369,6 +369,7 @@
                 <ul>
                     <li>超過重量：ECMS >30.0kg / FedEx >30.0kg は「超過」と表示</li>
                     <li>サイズ超過：3辺合計 >243cm または 最長辺 >121cm または 2番目の長辺 >76cm</li>
+                    <li>ECMS制限：いずれかの辺が >55cm で発送不可</li>
                 </ul>
             </div>
 
@@ -438,7 +439,8 @@
         const SIZE_LIMITS = {
             totalDimensions: 243, // 3辺合計上限（cm）
             maxSide: 121, // 最長辺上限（cm）
-            secondMaxSide: 76 // 2番目の長辺上限（cm）
+            secondMaxSide: 76, // 2番目の長辺上限（cm）
+            ecmsMaxSide: 55 // ECMS個別制限（cm）
         };
 
         function calculateVolumetricWeight(width, depth, height, divisor) {
@@ -469,12 +471,17 @@
                 reason = `2番目の長辺${secondMaxDimension.toFixed(1)}cm > ${SIZE_LIMITS.secondMaxSide}cm`;
             }
             
+            // ECMS個別サイズ制限チェック
+            const ecmsExcess = Math.max(width, depth, height) > SIZE_LIMITS.ecmsMaxSide;
+            
             return {
                 isExcess: isExcess,
                 totalDimensions: totalDimensions,
                 maxDimension: maxDimension,
                 secondMaxDimension: secondMaxDimension,
-                reason: reason
+                reason: reason,
+                ecmsExcess: ecmsExcess,
+                ecmsReason: ecmsExcess ? `いずれかの辺が${Math.max(width, depth, height).toFixed(1)}cm > ${SIZE_LIMITS.ecmsMaxSide}cm` : null
             };
         }
 
@@ -536,7 +543,7 @@
             const fedexRoundedWeight = roundUpToNearestHalf(fedexCalculatedWeight);
             const ecmsRoundedWeight = roundUpToNearestHalf(ecmsCalculatedWeight);
 
-            // サイズ超過の場合
+            // 全体的なサイズ超過の場合（FedX・ECMS共に配送不可）
             if (sizeCheck.isExcess) {
                 updateShippingOption('fedex-result', 'FedEx', `サイズ超過 (${sizeCheck.reason})`, fedexRoundedWeight);
                 updateShippingOption('ecms-result', 'ECMS', `サイズ超過 (${sizeCheck.reason})`, ecmsRoundedWeight);
@@ -552,31 +559,58 @@
             const fedexBaseRate = getBaseShippingRate('fedex', fedexRoundedWeight);
             const ecmsBaseRate = getBaseShippingRate('ecms', ecmsRoundedWeight);
 
-            // 最終料金計算（燃油サーチャージ + 割増率）
-            const fedexFinalRate = calculateFinalRate('fedex', fedexBaseRate);
-            const ecmsFinalRate = calculateFinalRate('ecms', ecmsBaseRate);
-
-            // 結果表示更新
-            updateShippingOption('fedex-result', 'FedEx', fedexFinalRate, fedexRoundedWeight, fedexBaseRate);
-            updateShippingOption('ecms-result', 'ECMS', ecmsFinalRate, ecmsRoundedWeight, ecmsBaseRate);
-
-            // 比較表示
-            updateComparison(fedexFinalRate, ecmsFinalRate);
+            // ECMS個別サイズ制限チェック
+            let ecmsFinalRate, fedexFinalRate;
+            
+            if (sizeCheck.ecmsExcess) {
+                // ECMSのみサイズ超過の場合
+                ecmsFinalRate = '発送不可';
+                fedexFinalRate = calculateFinalRate('fedex', fedexBaseRate);
+                
+                // 結果表示更新
+                updateShippingOption('fedex-result', 'FedEx', fedexFinalRate, fedexRoundedWeight, fedexBaseRate);
+                updateShippingOption('ecms-result', 'ECMS', '発送不可', ecmsRoundedWeight, null, sizeCheck.ecmsReason);
+                
+                // 比較表示（FedXのみ利用可能）
+                document.getElementById('comparison').innerHTML = `
+                    <strong style="color: #d32f2f;">ECMSは発送不可のため、FedExのみ利用可能です</strong><br>
+                    <small>ECMS制限: ${sizeCheck.ecmsReason}</small>
+                `;
+                document.getElementById('comparison').style.display = 'block';
+            } else {
+                // 両方とも利用可能
+                fedexFinalRate = calculateFinalRate('fedex', fedexBaseRate);
+                ecmsFinalRate = calculateFinalRate('ecms', ecmsBaseRate);
+                
+                // 結果表示更新
+                updateShippingOption('fedex-result', 'FedEx', fedexFinalRate, fedexRoundedWeight, fedexBaseRate);
+                updateShippingOption('ecms-result', 'ECMS', ecmsFinalRate, ecmsRoundedWeight, ecmsBaseRate);
+                
+                // 比較表示
+                updateComparison(fedexFinalRate, ecmsFinalRate);
+            }
         }
 
-        function updateShippingOption(elementId, serviceName, rate, weight, baseRate) {
+        function updateShippingOption(elementId, serviceName, rate, weight, baseRate, reasonText) {
             const element = document.getElementById(elementId);
             const priceElement = element.querySelector('.price');
             const weightElement = element.querySelector('.weight-info');
             
-            priceElement.textContent = formatCurrency(rate);
-            
-            // 重量情報の表示
-            let weightInfo = `計算重量: ${weight}kg`;
-            if (typeof baseRate === 'number' && typeof rate === 'number') {
-                weightInfo += ` (基本料金: ¥${baseRate.toLocaleString()})`;
+            if (rate === '発送不可') {
+                priceElement.textContent = '発送不可';
+                priceElement.style.color = '#d32f2f';
+                weightElement.textContent = reasonText || `計算重量: ${weight}kg (サイズ制限)`;
+            } else {
+                priceElement.textContent = formatCurrency(rate);
+                priceElement.style.color = '#000000';
+                
+                // 重量情報の表示
+                let weightInfo = `計算重量: ${weight}kg`;
+                if (typeof baseRate === 'number' && typeof rate === 'number') {
+                    weightInfo += ` (基本料金: ¥${baseRate.toLocaleString()})`;
+                }
+                weightElement.textContent = weightInfo;
             }
-            weightElement.textContent = weightInfo;
             
             // より良い選択肢のスタイル削除
             element.classList.remove('better');
