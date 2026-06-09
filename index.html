@@ -604,12 +604,8 @@
                 priceElement.textContent = formatCurrency(rate);
                 priceElement.style.color = '#000000';
                 
-                // 重量情報の表示
-                let weightInfo = `計算重量: ${weight}kg`;
-                if (typeof baseRate === 'number' && typeof rate === 'number') {
-                    weightInfo += ` (基本料金: ¥${baseRate.toLocaleString()})`;
-                }
-                weightElement.textContent = weightInfo;
+                // 重量情報の表示（基本料金は非表示）
+                weightElement.textContent = `計算重量: ${weight}kg`;
             }
             
             // より良い選択肢のスタイル削除
